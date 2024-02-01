@@ -7,7 +7,7 @@ require('dotenv').config();
 app.use(express.json());
 
 app.use('/api/weather', weatherRoutes);
-app.use('/api/favorites', userRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/location', locationRoutes);
 
 const PORT = process.env.PORT || 3000;

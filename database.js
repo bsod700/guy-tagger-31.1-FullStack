@@ -63,6 +63,21 @@ db.serialize(() => {
             console.log('cities table is ready');
         }
     })
+    // =====================
+    // --- user table ---
+    // =====================
+    db.run(`CREATE TABLE IF NOT EXISTS user (
+        userId INTEGER PRIMARY KEY,
+        name TEXT
+    )`,
+
+    [], (err) => {
+        if (err) {
+            console.error('Error creating user table', err);
+        } else {
+            console.log('user table is ready');
+        }
+    })
 });
 
 module.exports = db;

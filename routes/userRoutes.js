@@ -136,5 +136,45 @@ router.put('/updateFavorites', async (req, res) => {
     }
 });
 
+router.post('/addUser', (req, res) => {
+    const { userId, name } = req.query;
+  
+    // Check if userId exists
+    db.get("SELECT userId FROM user WHERE userId = ?", [userId], (err, row) => {
+      if (err) {
+        res.status(500).send("Error checking user existence");
+        return;
+      }
+  
+      if (row) {
+        res.status(400).send(`User ${name} userId - ${userId} already exists`);
+      } else {
+        // Insert new user
+        db.run("INSERT INTO user (userId, name) VALUES (?, ?)", [userId, name], (insertErr) => {
+          if (insertErr) {
+            res.status(500).send("Error adding user");
+          } else {
+            res.status(200).send(`User ${name} added successfully`);
+          }
+        });
+      }
+    });
+});
 
+router.get('/getUser/:userId', (req, res) => {
+    const { userId } = req.params;
+  
+    db.get("SELECT * FROM user WHERE userId = ?", [userId], (err, row) => {
+      if (err) {
+        res.status(500).send("Error fetching user");
+        return;
+      }
+  
+      if (row) {
+        res.status(200).json(row);
+      } else {
+        res.status(404).send("User not found");
+      }
+    });
+});
 module.exports = router;

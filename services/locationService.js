@@ -44,8 +44,49 @@ async function autocompleteLocation(query) {
     }
 }
 
+const insertCity = async (cityKey, localizedName) => {
+  const checkSql = 'SELECT cityKey FROM cities WHERE cityKey = ?';
+  const checkParams = [cityKey];
+
+  const insertSql = 'INSERT INTO cities (cityKey, localizedName) VALUES (?, ?)';
+  const insertParams = [cityKey, localizedName];
+
+  // Check if the cityKey already exists in the database
+  const existingCity = await new Promise((resolve, reject) => {
+    db.get(checkSql, checkParams, (err, row) => {
+      if (err) {
+        console.error('Error checking cityKey in the database:', err);
+        reject(err);
+      } else {
+        resolve(row);
+      }
+    });
+  });
+
+  if (existingCity) {
+    console.log(`City with cityKey ${cityKey} already exists in the database`);
+    return; // City already exists, do not insert
+  }
+
+  // City does not exist, insert it into the database
+  return new Promise((resolve, reject) => {
+    db.run(insertSql, insertParams, function (err) {
+      if (err) {
+        console.error('Error inserting city into the database:', err);
+        reject(err);
+      } else {
+        console.log(`City with cityKey ${cityKey} inserted into the database`);
+        resolve();
+      }
+    });
+  });
+};
+
+
+
 module.exports = {
     fetchCityName,
     searchCity,
-    autocompleteLocation
+    autocompleteLocation,
+    insertCity
 };
