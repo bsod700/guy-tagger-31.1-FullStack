@@ -2,8 +2,6 @@
 
 # dependencies
 /node_modules
-/weather-app
-/weather-app/node_modules
 
 
 # misc
