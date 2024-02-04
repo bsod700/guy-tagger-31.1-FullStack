@@ -98,43 +98,7 @@ router.delete('/deleteFavorite/:cityID', (req, res) => {
     });
 });
 
-// update favorites city ids in user id
-router.put('/updateFavorites', async (req, res) => {
-    const { userId, cityKeys } = req.query;
 
-    if (!userId || !Array.isArray(cityKeys)) {
-        console.warn(`Invalid request: Missing userId or cityKeys are not an array.`);
-        return res.status(400).send('User ID and a list of city IDs are required');
-    }
-
-    console.log(`Received request to update favorites for User ID: ${userId} with city IDs: ${cityKeys.join(', ')}`);
-
-    try {
-        await db.run('BEGIN TRANSACTION');
-        console.log(`Transaction started for updating favorites of User ID: ${userId}`);
-
-        console.log(`Deleting existing favorites for User ID: ${userId}`);
-        await db.run('DELETE FROM favorites WHERE userId = ?', [userId]);
-        console.log('Done');
-
-        console.log(`Inserting new favorites for User ID: ${userId}`);
-        const insertSql = 'INSERT INTO favorites (userId, cityKey, localizedName) VALUES (?, ?, ?)';
-        for (const cityKey of cityKeys) {
-            const localizedName = await locationService.fetchCityName(cityKey);
-            console.log(`Inserting city ID ${cityKey} with localizedName '${localizedName}' for User ID: ${userId}`);
-            await db.run(insertSql, [userId, cityKey, localizedName]);
-        }
-
-        await db.run('COMMIT');
-        console.log(`Favorites successfully updated for User ID: ${userId}`);
-        res.status(200).send('Favorites updated successfully');
-    } catch (error) {
-        console.error(`Error occurred while updating favorites for User ID: ${userId}:`, error);
-        await db.run('ROLLBACK');
-        console.log(`Transaction rolled back due to error for User ID: ${userId}`);
-        res.status(500).send('Failed to update favorites');
-    }
-});
 
 router.post('/addUser', (req, res) => {
     const { userId, name } = req.query;
@@ -173,8 +137,62 @@ router.get('/getUser/:userId', (req, res) => {
       if (row) {
         res.status(200).json(row);
       } else {
-        res.status(404).send("User not found");
+        res.status(200).json({ user: null, message: "User not found" });
       }
+    });
+});
+
+// update favorites city ids in user id
+router.put('/:userId/updateFavorites', async (req, res) => {
+    const { userId } = req.params;
+    const { cityKeys } = req.query;
+
+    if (!userId || !Array.isArray(cityKeys)) {
+        console.warn(`Invalid request: Missing userId or cityKeys are not an array.`);
+        return res.status(400).send('User ID and a list of city IDs are required');
+    }
+
+    console.log(`Received request to update favorites for User ID: ${userId} with city IDs: ${cityKeys.join(', ')}`);
+
+    try {
+        await db.run('BEGIN TRANSACTION');
+        console.log(`Transaction started for updating favorites of User ID: ${userId}`);
+
+        console.log(`Deleting existing favorites for User ID: ${userId}`);
+        await db.run('DELETE FROM favorites WHERE userId = ?', [userId]);
+        console.log('Done');
+
+        console.log(`Inserting new favorites for User ID: ${userId}`);
+        const insertSql = 'INSERT INTO favorites (userId, cityKey, localizedName) VALUES (?, ?, ?)';
+        for (const cityKey of cityKeys) {
+            const localizedName = await locationService.fetchCityName(cityKey);
+            console.log(`Inserting city ID ${cityKey} with localizedName '${localizedName}' for User ID: ${userId}`);
+            await db.run(insertSql, [userId, cityKey, localizedName]);
+        }
+
+        await db.run('COMMIT');
+        console.log(`Favorites successfully updated for User ID: ${userId}`);
+        res.status(200).send('Favorites updated successfully');
+    } catch (error) {
+        console.error(`Error occurred while updating favorites for User ID: ${userId}:`, error);
+        await db.run('ROLLBACK');
+        console.log(`Transaction rolled back due to error for User ID: ${userId}`);
+        res.status(500).send('Failed to update favorites');
+    }
+});
+
+// get cities if selected userID
+router.get('/:userId/favorites', (req, res) => {
+    const { userId } = req.params;
+  
+    db.all("SELECT cityKey, localizedName FROM favorites WHERE userId = ?", [userId], (err, rows) => {
+      if (err) {
+        console.error('Error fetching favorites:', err);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+  
+      res.status(200).json(rows);
     });
 });
 module.exports = router;

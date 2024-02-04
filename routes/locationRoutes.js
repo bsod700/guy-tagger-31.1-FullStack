@@ -18,8 +18,13 @@ router.get('/search', async (req, res) => {
     for (const city of results) {
       await locationService.insertCity(city.Key, city.LocalizedName);
     }
-
-    res.json(results);
+    const resultMap = results.map((city) => {
+      return {
+        cityKey: city.Key,
+        localizedName: city.LocalizedName
+      }
+    })
+    res.json(resultMap);
   } catch (error) {
     res.status(500).send('Error processing your request');
   }
